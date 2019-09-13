@@ -7,7 +7,8 @@ interface
 uses MVCFramework,
   MVCFramework.Logger,
   MVCFramework.Commons,
-  Web.HTTPApp, UPizzaTamanhoEnum, UPizzaSaborEnum, UEfetuarPedidoDTOImpl;
+  Web.HTTPApp, UPizzaTamanhoEnum, UPizzaSaborEnum, UEfetuarPedidoDTOImpl,
+  UPedidoRetornoDTOImpl;
 
 type
 
@@ -20,6 +21,11 @@ type
     [MVCPath('/efetuarPedido')]
     [MVCHTTPMethod([httpPOST])]
     procedure efetuarPedido(const AContext: TWebContext);
+
+    [MVCDoc('Criar novo pedido "201: Created"')]
+    [MVCPath('/consultarPedido')]
+    [MVCHTTPMethod([httpPOST])]
+    procedure consultarPedido(AContext: TWebContext);
   end;
 
 implementation
@@ -29,9 +35,28 @@ uses
   Rest.json,
   MVCFramework.SystemJSONUtils,
   UPedidoServiceIntf,
-  UPedidoServiceImpl, UPedidoRetornoDTOImpl;
+  UPedidoServiceImpl;
 
-{ TApp1MainController }
+
+procedure TPizzariaBackendController.consultarPedido(AContext: TWebContext);
+var
+
+  oEfetuarPedidoDTO: TEfetuarPedidoDTO;
+  oPedidoRetornoDTO: TPedidoRetornoDTO;
+begin
+
+  oEfetuarPedidoDTO := AContext.Request.BodyAs<TEfetuarPedidoDTO>;
+    with TPedidoService.Create do
+    try
+      oPedidoRetornoDTO := consultarPedido(oEfetuarPedidoDTO.DocumentoCliente);
+      Render(TJson.ObjectToJsonString(oPedidoRetornoDTO));
+
+    finally
+      oPedidoRetornoDTO.Free
+    end;
+  Log.Info('==>Executou o método ', 'consultarPedido');
+
+end;
 
 procedure TPizzariaBackendController.efetuarPedido(const AContext: TWebContext);
 var

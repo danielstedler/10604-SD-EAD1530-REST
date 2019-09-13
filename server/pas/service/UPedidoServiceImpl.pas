@@ -16,6 +16,7 @@ type
     function calcularTempoPreparo(const APizzaTamanho: TPizzaTamanhoEnum; const APizzaSabor: TPizzaSaborEnum): Integer;
   public
     function efetuarPedido(const APizzaTamanho: TPizzaTamanhoEnum; const APizzaSabor: TPizzaSaborEnum; const ADocumentoCliente: String): TPedidoRetornoDTO;
+    function consultarPedido(const ADocumentoCliente: String): TPedidoRetornoDTO; stdcall;
 
     constructor Create; reintroduce;
   end;
@@ -23,7 +24,8 @@ type
 implementation
 
 uses
-  UPedidoRepositoryImpl, System.SysUtils, UClienteServiceImpl;
+  UPedidoRepositoryImpl, System.SysUtils, UClienteServiceImpl,
+  FireDAC.Comp.Client;
 
 { TPedidoService }
 
@@ -77,6 +79,27 @@ begin
 
   FPedidoRepository.efetuarPedido(APizzaTamanho, APizzaSabor, oValorPedido, oTempoPreparo, oCodigoCliente);
   Result := TPedidoRetornoDTO.Create(APizzaTamanho, APizzaSabor, oValorPedido, oTempoPreparo);
+end;
+
+function TPedidoService.ConsultarPedido(const ADocumentoCliente: String): TPedidoRetornoDTO;
+var
+ pFDQuery : TFDQuery;
+begin
+  pFDQuery := TFDQuery.Create(nil);
+ try
+  FPedidoRepository.ConsultarPedido(ADocumentoCliente, pFDQuery);
+
+  if pFDQuery.IsEmpty then
+   raise Exception.Create('O Cliente: '+ ADocumentoCliente + ' não possuí pedidos');
+
+   Result := TPedidoRetornoDTO.Create(TPizzaTamanhoEnum(pFDQuery.FieldByName('nr_pizzatamanho').AsInteger),
+                                      TPizzaSaborEnum(pFDQuery.FieldByName('nr_pizzasabor').AsInteger),
+                                      pFDQuery.FieldByName('vl_pedido').AsCurrency,
+                                      pFDQuery.FieldByName('nr_tempopedido').AsInteger);
+
+ finally
+  FreeAndNil(pFDQuery);
+ end;
 end;
 
 end.
